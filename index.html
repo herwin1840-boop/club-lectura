@@ -113,8 +113,9 @@
       <p class="eyebrow">En vivo</p>
       <h2 id="enc-titulo">Próximo encuentro</h2>
       <p class="hero-sub" id="enc-fecha-texto">Todavía no se ha programado el próximo encuentro.</p>
-      <div id="enc-embed" style="display:none; margin-top:24px; border:1px solid var(--line); border-radius:4px; overflow:hidden;">
-        <iframe id="enc-iframe" style="width:100%; height:480px; border:none;" allow="camera; microphone; fullscreen; display-capture"></iframe>
+      <div id="enc-embed" style="display:none; margin-top:24px;">
+        <a id="enc-link" href="#" target="_blank" rel="noopener" class="btn btn-primary btn-lg">Entrar a la videollamada →</a>
+        <p style="font-size:0.82rem; color:var(--ink-soft); margin-top:10px;">Se abre en una pestaña nueva, sin límite de tiempo.</p>
       </div>
     </div>
   </section>
@@ -234,13 +235,12 @@
     `).join("");
   });
 
-  // ----- Encuentro embebido (Jitsi Meet) -----
+  // ----- Encuentro (Jitsi Meet, en pestaña nueva — sin límite de tiempo) -----
   observarProximoEncuentro((enc) => {
     if (!enc || !enc.sala) return;
     document.getElementById("enc-fecha-texto").textContent =
-      enc.fecha ? `${enc.fecha} · se abre la sala aquí mismo cuando empiece.` : "Se abre la sala aquí mismo cuando empiece.";
-    const iframe = document.getElementById("enc-iframe");
-    iframe.src = `https://meet.jit.si/${encodeURIComponent(enc.sala)}`;
+      enc.fecha ? `${enc.fecha} · clic abajo para entrar cuando empiece.` : "Clic abajo para entrar cuando empiece.";
+    document.getElementById("enc-link").href = `https://meet.jit.si/${encodeURIComponent(enc.sala)}`;
     document.getElementById("enc-embed").style.display = "block";
   });
 
