@@ -134,13 +134,20 @@
     </div>
   </section>
 
-  <!-- ARCHIVO preview -->
+  <!-- BIBLIOTECA (leídos + por leer) -->
   <section class="archive-preview" id="archivo">
     <div class="wrap">
-      <p class="eyebrow">Lo ya leído no se pierde</p>
-      <h2>Archivo del club</h2>
-      <div class="archive-grid" id="lista-archivo">
-        <p class="hint" style="color:var(--ink-soft); grid-column: 1/-1;">Todavía no hay libros archivados — el primero que marques como "actual" y luego reemplaces quedará aquí.</p>
+      <p class="eyebrow">La estantería del club</p>
+      <h2>Biblioteca</h2>
+
+      <h3 style="margin-top:30px; font-size:1rem; color:var(--moss);">Ya leídos</h3>
+      <div class="shelf-grid" id="lista-leidos">
+        <p class="hint" style="color:var(--ink-soft);">Todavía no hay libros leídos — el que reemplaces al marcar otro como "actual" quedará aquí.</p>
+      </div>
+
+      <h3 style="margin-top:34px; font-size:1rem; color:var(--pencil);">Por leer</h3>
+      <div class="shelf-grid" id="lista-pendientes">
+        <p class="hint" style="color:var(--ink-soft);">Todavía no hay libros elegidos para el futuro.</p>
       </div>
     </div>
   </section>
@@ -207,20 +214,33 @@
     }
   });
 
-  // ----- Archivo de libros -----
-  observarLibros((libros) => {
-    const archivados = libros.filter(l => l.estado !== "actual");
-    const cont = document.getElementById("lista-archivo");
-    if (archivados.length === 0) {
-      cont.innerHTML = '<p class="hint" style="color:var(--ink-soft); grid-column: 1/-1;">Todavía no hay libros archivados.</p>';
-      return;
-    }
-    cont.innerHTML = archivados.map(l => `
-      <div class="archive-item">
-        <span class="archive-title">${escaparHTML(l.titulo)}</span>
-        <span class="archive-curator">elegido por ${escaparHTML(l.curador_nombre || "")}</span>
+  // ----- Biblioteca (estanterías con portada) -----
+  function tarjetaLibro(l) {
+    const portada = l.imagen_url
+      ? `<img src="${escaparHTML(l.imagen_url)}" alt="Portada de ${escaparHTML(l.titulo || '')}">`
+      : `<div class="shelf-cover-placeholder">${escaparHTML(l.titulo || '')}</div>`;
+    return `
+      <div class="shelf-book">
+        <div class="shelf-cover">${portada}</div>
+        <span class="shelf-title">${escaparHTML(l.titulo)}</span>
+        <span class="shelf-curator">${escaparHTML(l.curador_nombre || "")}</span>
       </div>
-    `).join("");
+    `;
+  }
+
+  observarLibros((libros) => {
+    const leidos = libros.filter(l => l.estado === "leido");
+    const pendientes = libros.filter(l => l.estado === "pendiente");
+
+    const contLeidos = document.getElementById("lista-leidos");
+    contLeidos.innerHTML = leidos.length === 0
+      ? '<p class="hint" style="color:var(--ink-soft);">Todavía no hay libros leídos.</p>'
+      : leidos.map(tarjetaLibro).join("");
+
+    const contPendientes = document.getElementById("lista-pendientes");
+    contPendientes.innerHTML = pendientes.length === 0
+      ? '<p class="hint" style="color:var(--ink-soft);">Todavía no hay libros elegidos para el futuro.</p>'
+      : pendientes.map(tarjetaLibro).join("");
   });
 
   // ----- Calendario -----

@@ -23,11 +23,11 @@ export function observarLibroActual(callback) {
   });
 }
 
-/** Crea un libro nuevo. Por defecto queda "en archivo" hasta que se marque como actual. */
+/** Crea un libro nuevo. Por defecto queda "pendiente" (ya elegido, aún no se empieza) hasta que se marque como actual. */
 export async function crearLibro(datos) {
   const ref = await addDoc(COL, {
     ...datos,
-    estado: "archivado",
+    estado: "pendiente",
     creado: serverTimestamp(),
   });
   return ref.id;
@@ -41,12 +41,12 @@ export async function eliminarLibro(id) {
   await deleteDoc(doc(db, "libros", id));
 }
 
-/** Marca un libro como el actual, y desmarca cualquier otro que lo tuviera. */
+/** Marca un libro como el actual. El que tenía ese lugar pasa a "leído" (a la estantería). */
 export async function marcarComoActual(id) {
   const q = query(COL, where("estado", "==", "actual"));
   const snap = await getDocs(q);
   await Promise.all(snap.docs.map(d =>
-    d.id === id ? null : updateDoc(doc(db, "libros", d.id), { estado: "archivado" })
+    d.id === id ? null : updateDoc(doc(db, "libros", d.id), { estado: "leido" })
   ));
   await updateDoc(doc(db, "libros", id), { estado: "actual" });
 }

@@ -89,9 +89,10 @@
   <div class="panel-tab active" id="panel-libros">
 
     <div class="admin-card">
-      <h3>Agregar libro nuevo</h3>
-      <p class="hint">Se guarda en el archivo. Después lo marcas como "actual" cuando le toque su turno.</p>
+      <h3 id="titulo-form-libro">Agregar libro nuevo</h3>
+      <p class="hint">Se guarda en la biblioteca como "pendiente". Después lo marcas como "actual" cuando le toque su turno.</p>
       <form id="form-nuevo-libro">
+        <input type="hidden" id="nl-editando-id" value="">
         <div class="fila-doble">
           <div class="campo"><label>Título</label><input id="nl-titulo" required></div>
           <div class="campo"><label>Autor</label><input id="nl-autor" required></div>
@@ -113,14 +114,15 @@
           <div class="campo"><label>Fecha de cierre del capítulo</label><input id="nl-fecha-cierre" placeholder="ej. 28 jul"></div>
         </div>
         <div class="campo"><label>Semana (ej. "Semana 2 de 4")</label><input id="nl-semana"></div>
-        <button type="submit" class="btn btn-primary">Agregar al archivo</button>
+        <button type="submit" class="btn btn-primary" id="btn-guardar-libro">Agregar a la biblioteca (como pendiente)</button>
+        <button type="button" class="btn btn-ghost" id="btn-cancelar-edicion" style="display:none;">Cancelar edición</button>
         <p class="estado" id="estado-nuevo-libro"></p>
       </form>
     </div>
 
     <div class="admin-card">
-      <h3>Archivo de libros</h3>
-      <p class="hint">El que tenga la etiqueta "actual" es el que se muestra en la portada del sitio.</p>
+      <h3>Biblioteca del club</h3>
+      <p class="hint">"actual" se muestra en la portada. "pendiente" son libros ya elegidos para el futuro. "leído" pasa solo cuando marcas otro como actual.</p>
       <div id="lista-libros"><p class="hint">Cargando…</p></div>
     </div>
 
@@ -223,7 +225,7 @@
 
 <script type="module">
   import { observarSesion, obtenerPerfil } from "./js/auth.js";
-  import { observarLibros, crearLibro, marcarComoActual, eliminarLibro } from "./js/libros.js";
+  import { observarLibros, crearLibro, actualizarLibro, marcarComoActual, eliminarLibro } from "./js/libros.js";
   import { observarEventos, crearEvento, eliminarEvento, observarProximoEncuentro, guardarProximoEncuentro } from "./js/eventos.js";
   import { observarUsuarios, cambiarRol } from "./js/usuarios-admin.js";
   import { observarApariencia, guardarApariencia, PALETAS, FUENTES } from "./js/apariencia.js";
@@ -287,11 +289,14 @@
   });
 
   // ----- LIBROS -----
+  let librosCache = [];
+
   function iniciarLibros() {
     observarLibros((libros) => {
+      librosCache = libros;
       const cont = document.getElementById("lista-libros");
       if (libros.length === 0) {
-        cont.innerHTML = '<p class="hint">Todavía no hay libros en el archivo.</p>';
+        cont.innerHTML = '<p class="hint">Todavía no hay libros en la biblioteca.</p>';
         return;
       }
       cont.innerHTML = libros.map(l => `
@@ -301,8 +306,9 @@
             <div class="lista-item-sub">elegido por ${escaparHTML(l.curador_nombre)}${l.curador_lugar ? `, ${escaparHTML(l.curador_lugar)}` : ""}</div>
           </div>
           <div style="display:flex; align-items:center; gap:8px;">
-            <span class="badge ${l.estado === 'actual' ? 'actual' : ''}">${l.estado === 'actual' ? 'actual' : 'archivado'}</span>
+            <span class="badge ${l.estado === 'actual' ? 'actual' : ''}">${l.estado === 'actual' ? 'actual' : l.estado === 'leido' ? 'leído' : 'pendiente'}</span>
             ${l.estado !== 'actual' ? `<button class="btn btn-ghost btn-sm" data-marcar="${l.id}">Marcar actual</button>` : ''}
+            <button class="btn btn-ghost btn-sm" data-editar="${l.id}">Editar</button>
             <button class="btn btn-ghost btn-sm" data-eliminar="${l.id}">Eliminar</button>
           </div>
         </div>
@@ -313,32 +319,74 @@
       });
       cont.querySelectorAll("[data-eliminar]").forEach(btn => {
         btn.addEventListener("click", () => {
-          if (confirm("¿Eliminar este libro del archivo?")) eliminarLibro(btn.dataset.eliminar);
+          if (confirm("¿Eliminar este libro de la biblioteca?")) eliminarLibro(btn.dataset.eliminar);
         });
+      });
+      cont.querySelectorAll("[data-editar]").forEach(btn => {
+        btn.addEventListener("click", () => entrarModoEdicion(btn.dataset.editar));
       });
     });
   }
+
+  function entrarModoEdicion(id) {
+    const libro = librosCache.find(l => l.id === id);
+    if (!libro) return;
+
+    document.getElementById("nl-editando-id").value = id;
+    document.getElementById("nl-titulo").value = libro.titulo || "";
+    document.getElementById("nl-autor").value = libro.autor || "";
+    document.getElementById("nl-curador-nombre").value = libro.curador_nombre || "";
+    document.getElementById("nl-curador-lugar").value = libro.curador_lugar || "";
+    document.getElementById("nl-imagen").value = libro.imagen_url || "";
+    document.getElementById("nl-cap-num").value = libro.capitulo_numero || "";
+    document.getElementById("nl-cap-titulo").value = libro.capitulo_titulo || "";
+    document.getElementById("nl-progreso").value = libro.progreso ?? "";
+    document.getElementById("nl-fecha-cierre").value = libro.fecha_cierre || "";
+    document.getElementById("nl-semana").value = libro.semana || "";
+
+    document.getElementById("titulo-form-libro").textContent = `Editando: ${libro.titulo || ""}`;
+    document.getElementById("btn-guardar-libro").textContent = "Guardar cambios";
+    document.getElementById("btn-cancelar-edicion").style.display = "inline-block";
+    document.getElementById("form-nuevo-libro").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  function salirModoEdicion() {
+    document.getElementById("form-nuevo-libro").reset();
+    document.getElementById("nl-editando-id").value = "";
+    document.getElementById("titulo-form-libro").textContent = "Agregar libro nuevo";
+    document.getElementById("btn-guardar-libro").textContent = "Agregar a la biblioteca (como pendiente)";
+    document.getElementById("btn-cancelar-edicion").style.display = "none";
+  }
+
+  document.getElementById("btn-cancelar-edicion").addEventListener("click", salirModoEdicion);
 
   document.getElementById("form-nuevo-libro").addEventListener("submit", async (e) => {
     e.preventDefault();
     const estado = document.getElementById("estado-nuevo-libro");
     estado.textContent = ""; estado.className = "estado";
+    const editandoId = document.getElementById("nl-editando-id").value;
+    const datos = {
+      titulo: document.getElementById("nl-titulo").value,
+      autor: document.getElementById("nl-autor").value,
+      curador_nombre: document.getElementById("nl-curador-nombre").value,
+      curador_lugar: document.getElementById("nl-curador-lugar").value,
+      imagen_url: document.getElementById("nl-imagen").value,
+      capitulo_numero: document.getElementById("nl-cap-num").value,
+      capitulo_titulo: document.getElementById("nl-cap-titulo").value,
+      progreso: Number(document.getElementById("nl-progreso").value),
+      fecha_cierre: document.getElementById("nl-fecha-cierre").value,
+      semana: document.getElementById("nl-semana").value,
+    };
     try {
-      await crearLibro({
-        titulo: document.getElementById("nl-titulo").value,
-        autor: document.getElementById("nl-autor").value,
-        curador_nombre: document.getElementById("nl-curador-nombre").value,
-        curador_lugar: document.getElementById("nl-curador-lugar").value,
-        imagen_url: document.getElementById("nl-imagen").value,
-        capitulo_numero: document.getElementById("nl-cap-num").value,
-        capitulo_titulo: document.getElementById("nl-cap-titulo").value,
-        progreso: Number(document.getElementById("nl-progreso").value),
-        fecha_cierre: document.getElementById("nl-fecha-cierre").value,
-        semana: document.getElementById("nl-semana").value,
-      });
-      estado.textContent = "Libro agregado al archivo.";
+      if (editandoId) {
+        await actualizarLibro(editandoId, datos);
+        estado.textContent = "Cambios guardados.";
+      } else {
+        await crearLibro(datos);
+        estado.textContent = "Libro agregado a la biblioteca.";
+      }
       estado.classList.add("ok");
-      e.target.reset();
+      salirModoEdicion();
     } catch (err) {
       estado.textContent = "No se pudo guardar. Revisa tus permisos.";
       estado.classList.add("error");
