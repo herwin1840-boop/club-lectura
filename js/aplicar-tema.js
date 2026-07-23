@@ -7,6 +7,7 @@ import { PALETAS, FUENTES } from "./apariencia.js";
 const GOOGLE_FONTS_URL = {
   playfair: "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;1,500&family=Source+Sans+3:wght@400;500;600&display=swap",
   merriweather: "https://fonts.googleapis.com/css2?family=Merriweather:ital,wght@0,400;0,700;1,400&family=Nunito+Sans:wght@400;600;700&display=swap",
+  clasica: "https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap",
 };
 
 function inyectarFuenteSiHaceFalta(fuenteId) {

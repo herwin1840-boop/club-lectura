@@ -18,6 +18,7 @@ export const FUENTES = {
   fraunces: { nombre: "Fraunces + Work Sans (original)", display: "'Fraunces', serif", body: "'Work Sans', sans-serif" },
   playfair: { nombre: "Playfair Display + Source Sans", display: "'Playfair Display', serif", body: "'Source Sans 3', sans-serif" },
   merriweather: { nombre: "Merriweather + Nunito Sans", display: "'Merriweather', serif", body: "'Nunito Sans', sans-serif" },
+  clasica: { nombre: "Clásica de biblioteca (todo serif)", display: "'Libre Baskerville', serif", body: "'Lora', serif" },
 };
 
 export function observarApariencia(callback) {
